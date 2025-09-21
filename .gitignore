@@ -20,3 +20,5 @@ logs/
 
 # Local data stores
 vectorstore/
+
+node_modules/

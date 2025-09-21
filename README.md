@@ -20,10 +20,64 @@ Cold email generator for services company using groq, langchain and streamlit. I
      pip install -r requirements.txt
     ```
    
-3. Run the streamlit app:
-   ```commandline
-   streamlit run app/main.py
-   ```
+## Tech Stack
+- Backend
+  - FastAPI (Python) – REST API server (`app/server.py`)
+  - LangChain + Groq (`langchain-groq`) – LLM pipeline
+  - ChromaDB – simple vector store for portfolio matching
+  - python-dotenv – environment config
+  - Uvicorn – ASGI server
+- Frontend
+  - React 18 (TypeScript) – UI in `ui/`
+  - Vite – dev server & bundler with proxy to backend
+  - Tailwind CSS + PostCSS – styling
+
+## Environment Variables
+Create an `.env` file in the project root or under `app/` with:
+```env
+GROQ_API_KEY=your_groq_key
+USER_AGENT="cold-email-generator/1.0 (+https://your-site-or-email)"
+TOKENIZERS_PARALLELISM=false
+LOG_LEVEL=INFO
+```
+
+## Run the Backend (FastAPI)
+From the project root:
+```bash
+uvicorn app.server:app --reload
+```
+This starts the API on http://localhost:8000
+
+Useful endpoints:
+- `GET /health` – health check
+- `POST /api/generate` – body: `{ "url": "<job_url>" }`, returns `{ emails: string[] }`
+
+## Run the Frontend (React + Vite)
+From the `ui/` directory:
+```bash
+npm install
+npm run dev
+```
+Open http://localhost:5173 – Vite proxies API calls to `http://localhost:8000`.
+
+## Production Build
+From `ui/`:
+```bash
+npm run build
+```
+This generates `ui/dist/`. The FastAPI server is configured to automatically serve this production build at the root path when present.
+
+Then start the backend from the project root:
+```bash
+uvicorn app.server:app --reload
+```
+Open http://localhost:8000 to use the app (served from `ui/dist`).
+
+## Legacy: Streamlit (optional)
+You can still run the older Streamlit demo (not recommended if using the new React UI):
+```bash
+streamlit run app/main.py
+```
    
 
 Copyright (C) Codebasics Inc. All rights reserved.

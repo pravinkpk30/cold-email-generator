@@ -31,10 +31,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-"""Static frontend setup: serve under /static and handle root at /."""
-static_dir = os.path.join(os.path.dirname(__file__), "static")
+"""Static frontend setup: serve app static under /static and production UI (ui/dist) at /."""
+here = os.path.dirname(__file__)
+static_dir = os.path.join(here, "static")
 if os.path.isdir(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+# If a production React build exists, serve it at root
+dist_dir = os.path.abspath(os.path.join(here, "..", "ui", "dist"))
+if os.path.isdir(dist_dir):
+    app.mount("/", StaticFiles(directory=dist_dir, html=True), name="frontend")
 
 
 class GenerateRequest(BaseModel):
@@ -58,18 +64,26 @@ def health():
 
 @app.get("/")
 def root():
+    # Prefer built UI if available
+    if os.path.isdir(dist_dir):
+        index_path = os.path.join(dist_dir, "index.html")
+        if os.path.isfile(index_path):
+            return FileResponse(index_path)
+    # Otherwise fall back to app/static
     index_path = os.path.join(static_dir, "index.html")
     if os.path.isfile(index_path):
         return FileResponse(index_path)
     # Fallback minimal page
-    return HTMLResponse("""
-    <!DOCTYPE html>
-    <html><head><meta charset='utf-8'><title>Cold Email Generator</title></head>
-    <body>
-      <h1>Cold Email Generator</h1>
-      <p>Static files not found. Ensure app/static/index.html exists.</p>
-    </body></html>
-    """)
+    return HTMLResponse(
+        """
+        <!DOCTYPE html>
+        <html><head><meta charset='utf-8'><title>Cold Email Generator</title></head>
+        <body>
+          <h1>Cold Email Generator</h1>
+          <p>Build the frontend (ui/dist) or add app/static/index.html.</p>
+        </body></html>
+        """
+    )
 
 
 @app.post("/api/generate", response_model=GenerateResponse)
